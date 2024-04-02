@@ -187,7 +187,11 @@ int gw_mng_handle_host_msg(uint8_t buf[], int data_len)
 			cmd_Start_Ctrl_t *p_ctrl = (cmd_Start_Ctrl_t *)p_msg->data;
 			if (p_ctrl->module == MODULE_SCANNER) {
 				usart_if_tx(U1_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
+				if ( p_ctrl->ctrl.scnr_ctrl.sdr_chn != 0 )		p_ctrl->ctrl.scnr_ctrl.sdr_chn++;
+				if ( p_ctrl->ctrl.scnr_ctrl.ble_chn != 0 )		p_ctrl->ctrl.scnr_ctrl.ble_chn++;
 				usart_if_tx(U3_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
+				if ( p_ctrl->ctrl.scnr_ctrl.sdr_chn != 0 )		p_ctrl->ctrl.scnr_ctrl.sdr_chn++;
+				if ( p_ctrl->ctrl.scnr_ctrl.ble_chn != 0 )		p_ctrl->ctrl.scnr_ctrl.ble_chn++;
 				usart_if_tx(U6_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
 			} else {
 				usart_if_tx(U8_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
