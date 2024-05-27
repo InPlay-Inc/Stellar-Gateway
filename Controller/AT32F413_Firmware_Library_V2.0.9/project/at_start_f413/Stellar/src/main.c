@@ -34,6 +34,8 @@
 #include "usart_if.h"
 #include "spi_if.h"
 
+#include "in612_ctrl.h"
+
 /** @addtogroup AT32F413_periph_examples
   * @{
   */
@@ -41,13 +43,6 @@
 /** @addtogroup 413_USB_device_vcp_loopback USB_device_vcp_loopback
   * @{
   */
-
-enum{
-
-	MODE_NORMAL = 0,
-	MODE_TEST,
-	MODE_BOOT,
-};
 
 #define DUMP_HEX_DATA(str, p_val, length, base) \
 {\
@@ -69,15 +64,7 @@ enum{
 uint8_t usb_buffer[1200];
 
 int in612_cs = -1;
-int mode;
-
-//Function Declaration of in612_ctrl
-int in612_ctrl_init(void);
-void in612_ctrl_enter_boot_mode(int cs);
-void in612_ctrl_reset(int cs);
-_Bool in612_ctrl_check_cmd_ready(uint8_t buf[], int len);
-void in612_enter_boot_mode(int cs);
-int in612_ctrl_get_cs(void);
+int mode = -1;
 
 //Function Declaration of gateway
 int gw_mng_usart_rx_cb(int cs, uint8_t rx_buf[], int rx_len);
@@ -202,7 +189,6 @@ void usart_data_rcvd(int cs, uint8_t buf[], uint16_t len)
   */
 int main(void)
 {
-  int i;
   uint16_t data_len;
 
   /* config nvic priority group */
@@ -218,25 +204,10 @@ int main(void)
   usb_if_open();
   //spi_if_open();
 
-/*
-	WAKEUP_IN/SLEEP_IND  |       MODE
-	=======================================
-		   00			 |      Normal
-		   01            |      Bypass
-		   10            |      Bypass
-		   11            |  IN612 Download
-*/
-  mode = in612_ctrl_init();
+  in612_ctrl_init();
 
   for (int cs=0;cs<4;cs++)
     in612_ctrl_reset(cs);
-
-  if (mode == 1) {//Test mode, all data from VCP will be passed to each IN612L
-	in612_cs = in612_ctrl_get_cs();
-  } else 
-    in612_cs = -1;
-
-  printf("mode = %x cs = %d\n", mode, in612_cs);
 
   while(1) {
     /* 1. SPI*/
@@ -264,35 +235,33 @@ int main(void)
     /* send data to hardware usart */
     if(data_len > 0)
     {
+      printf(" <== ");
+      for (int i=0;i<data_len;i++)
+        printf("%02x ", usb_buffer[i]);
+      printf("\n");
+
+	  if (mode == -1) {
+        mode = in612_ctrl_get_mode(usb_buffer, data_len);
+        if (mode == MODE_NORMAL)
+          printf("%s\n", "MODE_NORMAL");
+        else {
+          in612_cs = in612_ctrl_get_cs();
+          if (mode == MODE_BOOT)
+            in612_enter_boot_mode(in612_cs);
+          printf("%s: cs = %d\n", mode==MODE_BOOT ? "MODE_BOOT" : "MODE_TEST", in612_cs);
+        }
+	  }
+
 	  switch(mode) {
       case MODE_TEST:
-        if (in612_cs != -1)
-          usart_if_tx(in612_cs, usb_buffer, data_len);
-        break;
       case MODE_BOOT:
-        if ( in612_ctrl_check_cmd_ready(usb_buffer, data_len) == TRUE) {
-          if (in612_cs != in612_ctrl_get_cs()) {
-            in612_cs = in612_ctrl_get_cs();
-            in612_enter_boot_mode(in612_cs);
-            mode = MODE_BOOT;
-            printf("mode = %x cs = %d\n", mode, in612_cs);
-          }
-		}
         usart_if_tx(in612_cs, usb_buffer, data_len);
         break;
       case MODE_NORMAL:
-        printf(" <== ");
-        for (int i=0;i<data_len;i++)
-          printf("%02x ", usb_buffer[i]);
-        printf("\n");
-        if ( in612_ctrl_check_cmd_ready(usb_buffer, data_len) == TRUE) {
-          in612_cs = in612_ctrl_get_cs();
-          in612_enter_boot_mode(in612_cs);
-          mode = MODE_BOOT;
-          printf("mode = %x cs = %d\n", mode, in612_cs);
-		} else {
-          gw_mng_handle_host_msg(usb_buffer, data_len);
-        }
+        gw_mng_handle_host_msg(usb_buffer, data_len);
+        break;
+      default:
+        break;
       }
     }
   }

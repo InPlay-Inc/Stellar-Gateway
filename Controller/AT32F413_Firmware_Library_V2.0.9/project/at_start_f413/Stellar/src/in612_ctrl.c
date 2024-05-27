@@ -4,6 +4,8 @@
 #include "at32f413_board.h"
 #include "at32f413_clock.h"
 
+#include "in612_ctrl.h"
+
 typedef struct
 {
 	gpio_type 					*gpio_base;
@@ -93,7 +95,7 @@ void in612_exit_boot_mode(int cs)
 
 int in612_ctrl_init(void)
 {
-	int mode = 0;
+	//int mode = 0;
 	gpio_init_type gpio_init_struct;
 
 	for (int i=0;i<4;i++) {
@@ -121,10 +123,10 @@ int in612_ctrl_init(void)
 	gpio_init_struct.gpio_out_type  = GPIO_OUTPUT_PUSH_PULL;
 
 	//WAKEUP_IN (PA0)
-	gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
-	gpio_init_struct.gpio_pins = WAKEUP_IN_GPIO_PIN;
-	gpio_init_struct.gpio_pull = GPIO_PULL_DOWN;
-	gpio_init(WAKEUP_IN_GPIO_BASE, &gpio_init_struct);
+//	gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
+//	gpio_init_struct.gpio_pins = WAKEUP_IN_GPIO_PIN;
+//	gpio_init_struct.gpio_pull = GPIO_PULL_DOWN;
+//	gpio_init(WAKEUP_IN_GPIO_BASE, &gpio_init_struct);
 
 	//SLEEP_IND (PC4)
 //	gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
@@ -144,10 +146,10 @@ int in612_ctrl_init(void)
 	gpio_init_struct.gpio_pull = GPIO_PULL_UP;
 	gpio_init(PB9_GPIO_BASE, &gpio_init_struct);
 
-	mode = gpio_input_data_bit_read(WAKEUP_IN_GPIO_BASE, WAKEUP_IN_GPIO_PIN)<<1;
+	//mode = gpio_input_data_bit_read(WAKEUP_IN_GPIO_BASE, WAKEUP_IN_GPIO_PIN)<<1;
 	//mode |= gpio_input_data_bit_read(SLEEP_IND_GPIO_BASE, SLEEP_IND_GPIO_PIN);
 
-	return mode;
+	return 0;
 }
 
 void in612_ctrl_reset(int cs)
@@ -166,13 +168,27 @@ int in612_ctrl_get_cs(void)
 	return cs;
 }
 
-_Bool in612_ctrl_check_cmd_ready(uint8_t buf[], int len)
-{
-	int cs = -1;
-	uint8_t cmd_ready[5] = {0x7e, 0x01, 0x00, 0x00, 0x7e};
+//_Bool in612_ctrl_check_cmd_ready(uint8_t buf[], int len)
+//{
+//	int cs = -1;
+//	uint8_t cmd_ready[5] = {0x7e, 0x01, 0x00, 0x00, 0x7e};
 
-	if (len == sizeof(cmd_ready) && !memcmp(buf, cmd_ready, len))
-		return TRUE;
+//	if (len == sizeof(cmd_ready) && !memcmp(buf, cmd_ready, len))
+//		return TRUE;
+
+//	return FALSE;
+//}
+
+int in612_ctrl_get_mode(uint8_t buf[], int len)
+{
+	uint8_t boot_cmd_ready[5] = {0x7e, 0x01, 0x00, 0x00, 0x7e};
+	uint8_t test_cmd_reset[4] = {0x01, 0x03, 0x0C, 0x00};
+
+	if (len == sizeof(boot_cmd_ready) && !memcmp(buf, boot_cmd_ready, len))
+		return MODE_BOOT;
+
+	if (len == sizeof(test_cmd_reset) && !memcmp(buf, test_cmd_reset, len))
+		return MODE_TEST;
 
 	return FALSE;
 }
