@@ -181,14 +181,19 @@ int in612_ctrl_get_cs(void)
 
 int in612_ctrl_get_mode(uint8_t buf[], int len)
 {
+	int mode = MODE_NORMAL;
+
 	uint8_t boot_cmd_ready[5] = {0x7e, 0x01, 0x00, 0x00, 0x7e};
 	uint8_t test_cmd_reset[4] = {0x01, 0x03, 0x0C, 0x00};
 
-	if (len == sizeof(boot_cmd_ready) && !memcmp(buf, boot_cmd_ready, len))
-		return MODE_BOOT;
+	if (len == sizeof(boot_cmd_ready) && buf[0] == boot_cmd_ready[0] && buf[1] == boot_cmd_ready[1] && buf[4] == boot_cmd_ready[4]) {
+		mode = MODE_BOOT;
+		if (buf[2] != 0)
+			mode |= ((buf[3]+1)<<4);
+	}
 
 	if (len == sizeof(test_cmd_reset) && !memcmp(buf, test_cmd_reset, len))
 		return MODE_TEST;
 
-	return FALSE;
+	return mode;
 }

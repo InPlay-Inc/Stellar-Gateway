@@ -235,21 +235,33 @@ int main(void)
     /* send data to hardware usart */
     if(data_len > 0)
     {
-      printf(" <== ");
-      for (int i=0;i<data_len;i++)
-        printf("%02x ", usb_buffer[i]);
-      printf("\n");
-
 	  if (mode == -1) {
+
+		printf(" <== ");
+		for (int i=0;i<data_len;i++)
+			printf("%02x ", usb_buffer[i]);
+		printf("\n");
+
         mode = in612_ctrl_get_mode(usb_buffer, data_len);
-        if (mode == MODE_NORMAL)
+        if (mode == MODE_NORMAL) {
+
           printf("%s\n", "MODE_NORMAL");
-        else {
-          in612_cs = in612_ctrl_get_cs();
-          if (mode == MODE_BOOT)
-            in612_enter_boot_mode(in612_cs);
-          printf("%s: cs = %d\n", mode==MODE_BOOT ? "MODE_BOOT" : "MODE_TEST", in612_cs);
+
+        } else {
+
+			in612_cs = in612_ctrl_get_cs();
+
+			if ( mode & MODE_BOOT ) {
+
+				if ( ((mode>>4)&0xFF) != 0 )
+					in612_cs = ((mode>>4)&0xFF)-1;
+				in612_enter_boot_mode(in612_cs);
+				mode = MODE_BOOT;
+			}
+
+			printf("%s: cs = %d\n", (mode & MODE_BOOT) ? "MODE_BOOT" : "MODE_TEST", in612_cs);
         }
+
 	  }
 
 	  switch(mode) {
