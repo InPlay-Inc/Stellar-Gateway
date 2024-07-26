@@ -66,6 +66,8 @@ uint8_t usb_buffer[1200];
 int in612_cs = -1;
 int mode = -1;
 
+const char mode_str[MODE_BOOT+1][50] = {"MODE_NORMAL", "MODE_TEST", "MODE_BOOT"};
+
 //Function Declaration of gateway
 int gw_mng_usart_rx_cb(int cs, uint8_t rx_buf[], int rx_len);
 int gw_mng_handle_host_msg(uint8_t buf[], int len);
@@ -209,6 +211,8 @@ int main(void)
   for (int cs=0;cs<4;cs++)
     in612_ctrl_reset(cs);
 
+  mode = MODE_NORMAL;
+
   while(1) {
     /* 1. SPI*/
     spi_state_t spi_state;
@@ -235,46 +239,107 @@ int main(void)
     /* send data to hardware usart */
     if(data_len > 0)
     {
-	  if (mode == -1) {
+		int new_mode, cs;
 
-		printf(" <== ");
-		for (int i=0;i<data_len;i++)
-			printf("%02x ", usb_buffer[i]);
-		printf("\n");
+		in612_ctrl_parse(usb_buffer, data_len, mode, in612_cs, &new_mode, &cs);
 
-        mode = in612_ctrl_get_mode(usb_buffer, data_len);
-        if (mode == MODE_NORMAL) {
+		if ( mode != new_mode || cs != in612_cs ) {
 
-          printf("%s\n", "MODE_NORMAL");
+				printf("%s\n", mode_str[new_mode]);
 
-        } else {
+				switch (new_mode)
+				{
+				case MODE_BOOT:
+					{
+						for (int cs=0;cs<4;cs++)
+							in612_ctrl_reset(cs);
 
-			in612_cs = in612_ctrl_get_cs();
+						in612_cs = cs;
+						in612_enter_boot_mode(in612_cs);
+	
+						usb_if_tx(usb_buffer, data_len);
+					} break;
+				case MODE_NORMAL:
+					{
+						in612_cs = -1;
 
-			if ( mode & MODE_BOOT ) {
+						if (mode == MODE_BOOT) {
 
-				if ( ((mode>>4)&0xFF) != 0 )
-					in612_cs = ((mode>>4)&0xFF)-1;
-				in612_enter_boot_mode(in612_cs);
-				mode = MODE_BOOT;
-			}
+							for (int cs=0;cs<4;cs++)
+								in612_ctrl_reset(cs);
 
-			printf("%s: cs = %d\n", (mode & MODE_BOOT) ? "MODE_BOOT" : "MODE_TEST", in612_cs);
-        }
+							delay_ms(1000);
+						}
 
-	  }
+						//gw_mng_handle_host_msg(usb_buffer, data_len);
+					} break;
+				case MODE_TEST:
+					{
+						in612_cs = cs;
+						printf("cs = %d\n", in612_cs);
+					} break;
+				}
+				mode = new_mode;
+				if ( new_mode == MODE_BOOT )
+					continue;
+		}
 
-	  switch(mode) {
-      case MODE_TEST:
-      case MODE_BOOT:
-        usart_if_tx(in612_cs, usb_buffer, data_len);
-        break;
-      case MODE_NORMAL:
-        gw_mng_handle_host_msg(usb_buffer, data_len);
-        break;
-      default:
-        break;
-      }
+		switch(mode)
+		{
+		case MODE_TEST:
+		case MODE_BOOT:
+			usart_if_tx(in612_cs, usb_buffer, data_len);
+			break;
+		case MODE_NORMAL:
+			gw_mng_handle_host_msg(usb_buffer, data_len);
+			break;
+		default:
+			break;
+		}
+
+//	  if (mode == -1) {
+
+//		printf(" <== ");
+//		for (int i=0;i<data_len;i++)
+//			printf("%02x ", usb_buffer[i]);
+//		printf("\n");
+
+//        mode = in612_ctrl_get_mode(usb_buffer, data_len);
+//        if (mode == MODE_NORMAL) {
+
+//          printf("%s\n", "MODE_NORMAL");
+
+//        } else {
+
+//			in612_cs = in612_ctrl_get_cs();
+
+//			if ( mode & MODE_BOOT ) {
+
+//				if ( ((mode>>4)&0xFF) != 0 )
+//					in612_cs = ((mode>>4)&0xFF)-1;
+//				in612_enter_boot_mode(in612_cs);
+//				mode = MODE_BOOT;
+
+//				usb_buffer[i]
+//				usb_if_tx(p_out, data_len)
+//			}
+
+//			printf("%s: cs = %d\n", (mode & MODE_BOOT) ? "MODE_BOOT" : "MODE_TEST", in612_cs);
+//        }
+
+//	  }
+
+//	  switch(mode & 0x0F) {
+//      case MODE_TEST:
+//      case MODE_BOOT:
+//        usart_if_tx(in612_cs, usb_buffer, data_len);
+//        break;
+//      case MODE_NORMAL:
+//        gw_mng_handle_host_msg(usb_buffer, data_len);
+//        break;
+//      default:
+//        break;
+//      }
     }
   }
 

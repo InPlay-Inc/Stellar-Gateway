@@ -197,3 +197,59 @@ int in612_ctrl_get_mode(uint8_t buf[], int len)
 
 	return mode;
 }
+
+int in612_ctrl_parse(uint8_t buf[], int len, int cur_mode, int cur_cs, int *p_new_mode, int *p_new_cs)
+{
+	*p_new_mode = cur_mode;
+	*p_new_cs = cur_cs;
+	
+	uint8_t boot_cmd_ready[5] = {0x7e, 0x01, 0x01, 0x00, 0x7e};
+	uint8_t test_cmd_reset[4] = {0x01, 0x03, 0x0C, 0x00};
+	uint8_t stellar_cmd_reset[2] = {0x01, 0x01};
+
+	if (cur_mode == MODE_BOOT) {
+
+		if ( len == sizeof(boot_cmd_ready) && buf[0] == boot_cmd_ready[0] && buf[1] == boot_cmd_ready[1] && buf[2] == boot_cmd_ready[2] ) {
+
+			*p_new_mode = MODE_BOOT;
+			*p_new_cs = buf[3];
+
+		} else if ( len == sizeof(stellar_cmd_reset) && !memcmp(stellar_cmd_reset, buf, len) ) {
+
+			*p_new_mode = MODE_NORMAL;
+			*p_new_cs = -1;
+		}
+
+	} else if (cur_mode == MODE_NORMAL) {
+
+		if ( len == sizeof(boot_cmd_ready) && buf[0] == boot_cmd_ready[0] && buf[1] == boot_cmd_ready[1] && buf[2] == boot_cmd_ready[2] ) {
+
+			*p_new_mode = MODE_BOOT;
+			*p_new_cs = buf[3];
+
+		} else if (len == sizeof(test_cmd_reset) && !memcmp(buf, test_cmd_reset, len)) {
+
+			*p_new_mode = MODE_TEST;
+			*p_new_cs = gpio_input_data_bit_read(PB9_GPIO_BASE, PB9_GPIO_PIN) << 1;
+			*p_new_cs |= gpio_input_data_bit_read(PB8_GPIO_BASE, PB8_GPIO_PIN);
+		}
+
+	}
+
+//	if ( buf[0] == boot_cmd_ready[0] && (buf[1] >= 0x01 && buf[1] <= 0x1B) /*&& buf[len-1] == boot_cmd_ready[0]*/ ) {
+
+//		*p_new_mode = MODE_BOOT;
+
+//		if ( buf[1] == boot_cmd_ready[1] && buf[2] == boot_cmd_ready[2] )
+//			*p_cs = buf[3];
+
+//	} else if (len == sizeof(test_cmd_reset) && !memcmp(buf, test_cmd_reset, len)) {
+
+//		*p_new_mode = MODE_TEST;
+
+//		*p_cs = gpio_input_data_bit_read(PB9_GPIO_BASE, PB9_GPIO_PIN) << 1;
+//		*p_cs |= gpio_input_data_bit_read(PB8_GPIO_BASE, PB8_GPIO_PIN);
+//	}
+
+	return 0;
+}
