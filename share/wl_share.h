@@ -33,10 +33,10 @@
 //#define MAX_BLE_ADV_PAYLOAD_LEN 21
 //#define MAX_SDR_UCST_PAYLOAD_LEN 23
 #define MAX_NODE_COUNT 		1000
-#define MAX_FRAME_SZ	39
-#define MAX_SDR_BCST_PAYLOAD_LEN 28
-#define MAX_BLE_ADV_PAYLOAD_LEN 27	//For iBeacon 27 bytes
-#define MAX_SDR_UCST_PAYLOAD_LEN 31
+#define MAX_FRAME_SZ	43
+#define MAX_SDR_BCST_PAYLOAD_LEN 32
+#define MAX_BLE_ADV_PAYLOAD_LEN 31	//For iBeacon 27 bytes
+#define MAX_SDR_UCST_PAYLOAD_LEN 35
 
 
 #define PKT_BCST_ID 			0x0505			// Advertising Packet broadcast Id
