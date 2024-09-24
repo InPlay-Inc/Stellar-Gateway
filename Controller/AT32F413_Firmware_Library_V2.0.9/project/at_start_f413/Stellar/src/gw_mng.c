@@ -200,11 +200,9 @@ int gw_mng_handle_host_msg(uint8_t buf[], int data_len)
 	case Cmd_Filter:
 		{
 			cmd_Filter_t *p_filter = (cmd_Filter_t*)p_msg->data;
-			if (p_filter->len != 0) {
-				usart_if_tx(U1_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
-				usart_if_tx(U3_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
-				usart_if_tx(U6_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Start_Ctrl_t));
-			}
+			usart_if_tx(U1_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
+			usart_if_tx(U3_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
+			usart_if_tx(U6_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
 		} break;
 	case Cmd_SDR_Mcst:
 	case Cmd_SDR_Ucst:
@@ -368,9 +366,9 @@ void gw_mng_usart_rx_cb(int cs, uint8_t rx_buf[], int rx_len)
 		}
 
 		if (len == 0) {
-			for (int i=0;i<rx_len;i++)
-				printf("%02x ",rx_buf[i]);
-			printf("\n");
+//			for (int i=0;i<rx_len;i++)
+//				printf("%02x ",rx_buf[i]);
+//			printf("\n");
 			return;
 		}
 
