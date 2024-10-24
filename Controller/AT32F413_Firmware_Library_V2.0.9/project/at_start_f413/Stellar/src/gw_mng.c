@@ -200,9 +200,9 @@ int gw_mng_handle_host_msg(uint8_t buf[], int data_len)
 	case Cmd_Filter:
 		{
 			cmd_Filter_t *p_filter = (cmd_Filter_t*)p_msg->data;
-			usart_if_tx(U1_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
-			usart_if_tx(U3_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
-			usart_if_tx(U6_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t));
+			usart_if_tx(U1_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t)+p_filter->len);
+			usart_if_tx(U3_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t)+p_filter->len);
+			usart_if_tx(U6_CS, (uint8_t*)p_msg, sizeof(wl_msg_t)+sizeof(cmd_Filter_t)+p_filter->len);
 		} break;
 	case Cmd_SDR_Mcst:
 	case Cmd_SDR_Ucst:
