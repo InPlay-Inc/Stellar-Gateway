@@ -227,6 +227,7 @@ typedef struct {
 	uint16_t 	sdr_scan_wnd;
 	uint8_t		ble_chn;
 	uint16_t 	ble_scan_wnd;
+	uint8_t		phy;
 }__attribute__ ((packed)) SCNR_Start_Ctrl_t;
 
 typedef struct {

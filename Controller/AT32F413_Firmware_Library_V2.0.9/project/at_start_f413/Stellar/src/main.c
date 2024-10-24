@@ -200,6 +200,7 @@ int main(void)
   at32_board_init();
   periph_clock_init();
 
+  printf("%s\n", __DATE__);
   printf("stellar_gateway_board_v2 started...\n");
 
   usart_if_open(usart_data_rcvd);
